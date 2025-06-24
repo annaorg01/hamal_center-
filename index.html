@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת חירום לחמ"ל - Emergency Command Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            direction: rtl;
+        }
+
+        .main-container {
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+            padding: 2px;
+            background: #000;
+        }
+
+        .section {
+            background: linear-gradient(145deg, #1e3c72 0%, #2a5298 100%);
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .section:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+            border-color: #00ff88;
+        }
+
+        .section-header {
+            background: linear-gradient(90deg, #000000 0%, #1a1a2e 100%);
+            padding: 12px 20px;
+            border-bottom: 2px solid #00ff41;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff41;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            letter-spacing: 1px;
+        }
+
+        .expand-btn {
+            background: transparent;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .expand-btn:hover {
+            background: #00ff41;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.7);
+        }
+
+        .section-content {
+            height: calc(100% - 60px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            grid-column: 1 / -1;
+            grid-row: 1 / -1;
+            border-radius: 0;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #ff4444;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1001;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: #ff6666;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.7);
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff41;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .content-placeholder {
+            text-align: center;
+            color: #cccccc;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .system-stats {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 10px;
+            color: #00ff41;
+            opacity: 0.7;
+        }
+
+        .pentagon-corner {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        .pentagon-corner.top-left {
+            top: 0;
+            left: 0;
+            border-width: 0 20px 20px 0;
+            border-color: transparent #00ff41 transparent transparent;
+        }
+
+        .pentagon-corner.top-right {
+            top: 0;
+            right: 0;
+            border-width: 20px 20px 0 0;
+            border-color: #00ff41 transparent transparent transparent;
+        }
+
+        .pentagon-corner.bottom-left {
+            bottom: 0;
+            left: 0;
+            border-width: 20px 0 0 20px;
+            border-color: transparent transparent transparent #00ff41;
+        }
+
+        .pentagon-corner.bottom-right {
+            bottom: 0;
+            right: 0;
+            border-width: 0 0 20px 20px;
+            border-color: transparent transparent #00ff41 transparent;
+        }
+
+        .embed-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- דשבורד מפונים -->
+        <div class="section" id="section1">
+            <div class="pentagon-corner top-left"></div>
+            <div class="pentagon-corner top-right"></div>
+            <div class="pentagon-corner bottom-left"></div>
+            <div class="pentagon-corner bottom-right"></div>
+            <div class="status-indicator"></div>
+            <div class="grid-pattern"></div>
+            <div class="section-header">
+                <h2 class="section-title">דשבורד מפונים</h2>
+                <button class="expand-btn" onclick="toggleFullscreen('section1')">הרחב</button>
+            </div>
+            <div class="section-content">
+                <iframe 
+                    src="https://lookerstudio.google.com/embed/reporting/3afc795b-f763-4c98-85b8-a315ba1eb7e0/page/7y1OF" 
+                    class="embed-frame"
+                    frameborder="0" 
+                    style="border:0" 
+                    allowfullscreen
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms">
+                </iframe>
+                <div class="system-stats">EVAC-SYS: ONLINE</div>
+            </div>
+        </div>
+
+        <!-- דשבורד משפחות -->
+        <div class="section" id="section2">
+            <div class="pentagon-corner top-left"></div>
+            <div class="pentagon-corner top-right"></div>
+            <div class="pentagon-corner bottom-left"></div>
+            <div class="pentagon-corner bottom-right"></div>
+            <div class="status-indicator"></div>
+            <div class="grid-pattern"></div>
+            <div class="section-header">
+                <h2 class="section-title">דשבורד משפחות</h2>
+                <button class="expand-btn" onclick="toggleFullscreen('section2')">הרחב</button>
+            </div>
+            <div class="section-content">
+                <iframe 
+                    src="https://lookerstudio.google.com/embed/reporting/3afc795b-f763-4c98-85b8-a315ba1eb7e0/page/7y1OF" 
+                    class="embed-frame"
+                    frameborder="0" 
+                    style="border:0" 
+                    allowfullscreen
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms">
+                </iframe>
+                <div class="system-stats">FAM-SYS: ACTIVE</div>
+            </div>
+        </div>
+
+        <!-- מיקום גאוגרפי -->
+        <div class="section" id="section3">
+            <div class="pentagon-corner top-left"></div>
+            <div class="pentagon-corner top-right"></div>
+            <div class="pentagon-corner bottom-left"></div>
+            <div class="pentagon-corner bottom-right"></div>
+            <div class="status-indicator"></div>
+            <div class="grid-pattern"></div>
+            <div class="section-header">
+                <h2 class="section-title">מיקום גאוגרפי</h2>
+                <button class="expand-btn" onclick="toggleFullscreen('section3')">הרחב</button>
+            </div>
+            <div class="section-content">
+                <iframe 
+                    src="https://lookerstudio.google.com/embed/reporting/3afc795b-f763-4c98-85b8-a315ba1eb7e0/page/7y1OF" 
+                    class="embed-frame"
+                    frameborder="0" 
+                    style="border:0" 
+                    allowfullscreen
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms">
+                </iframe>
+                <div class="system-stats">GEO-SYS: TRACKING</div>
+            </div>
+        </div>
+
+        <!-- טפסי חירום -->
+        <div class="section" id="section4">
+            <div class="pentagon-corner top-left"></div>
+            <div class="pentagon-corner top-right"></div>
+            <div class="pentagon-corner bottom-left"></div>
+            <div class="pentagon-corner bottom-right"></div>
+            <div class="status-indicator"></div>
+            <div class="grid-pattern"></div>
+            <div class="section-header">
+                <h2 class="section-title">טפסי חירום</h2>
+                <button class="expand-btn" onclick="toggleFullscreen('section4')">הרחב</button>
+            </div>
+            <div class="section-content">
+                <iframe 
+                    src="https://lookerstudio.google.com/embed/reporting/3afc795b-f763-4c98-85b8-a315ba1eb7e0/page/7y1OF" 
+                    class="embed-frame"
+                    frameborder="0" 
+                    style="border:0" 
+                    allowfullscreen
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms">
+                </iframe>
+                <div class="system-stats">FORM-SYS: READY</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFullscreen = null;
+
+        function toggleFullscreen(sectionId) {
+            const section = document.getElementById(sectionId);
+            
+            if (currentFullscreen === sectionId) {
+                // Exit fullscreen
+                section.classList.remove('fullscreen');
+                document.body.style.overflow = 'hidden';
+                const closeBtn = section.querySelector('.close-btn');
+                if (closeBtn) {
+                    closeBtn.remove();
+                }
+                currentFullscreen = null;
+            } else {
+                // Enter fullscreen
+                if (currentFullscreen) {
+                    // Exit current fullscreen first
+                    const currentSection = document.getElementById(currentFullscreen);
+                    currentSection.classList.remove('fullscreen');
+                    const oldCloseBtn = currentSection.querySelector('.close-btn');
+                    if (oldCloseBtn) {
+                        oldCloseBtn.remove();
+                    }
+                }
+                
+                section.classList.add('fullscreen');
+                document.body.style.overflow = 'hidden';
+                
+                // Add close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-btn';
+                closeBtn.innerHTML = '✕ סגור';
+                closeBtn.onclick = () => toggleFullscreen(sectionId);
+                section.appendChild(closeBtn);
+                
+                currentFullscreen = sectionId;
+            }
+        }
+
+        // Add keyboard shortcut to exit fullscreen
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && currentFullscreen) {
+                toggleFullscreen(currentFullscreen);
+            }
+        });
+
+        // Add double-click to expand sections
+        document.querySelectorAll('.section').forEach(section => {
+            section.addEventListener('dblclick', function() {
+                toggleFullscreen(this.id);
+            });
+        });
+
+        // Simulate real-time updates
+        setInterval(() => {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                // Randomly change color to simulate activity
+                const colors = ['#00ff41', '#ffff00', '#ff4444'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                indicator.style.background = randomColor;
+            });
+        }, 3000);
+    </script>
+</body>
+</html>
